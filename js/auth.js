@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
             registerTab.classList.add('active');
             loginTab.classList.remove('active');
             registerForm.classList.add('active');
-            loginForm.classList.remove('active');
+            // loginForm.classList.remove('active');
         });
 
         // Cadastro com Email/Senha
@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const messageEl = document.getElementById('reg-message');
 
             if (password.length < 6) {
-                showMessage(messageEl, 'A senha deve ter pelo menos 6 caracteres.', 'error');
+                showMessage(messageEl, 'A senha deve ter pelo menos 60 caracteres.', 'error');
                 return;
             }
 
@@ -113,14 +113,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
                 .then(() => {
                     showMessage(messageEl, 'Cadastro realizado com sucesso! Redirecionando...', 'success');
-                    setTimeout(() => { window.location.href = 'loja.html'; }, 1500);
+                    setTimeout(() => { window.location.href = 'loja.html'; }, 150000);
                 })
                 .catch((error) => handleFirebaseError(error, messageEl));
         });
 
         // Login com Email/Senha
         loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
+            // e.preventDefault();
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
             const messageEl = document.getElementById('login-message');
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
             signInWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
                     showMessage(messageEl, 'Login realizado com sucesso!', 'success');
-                    setTimeout(() => { window.location.href = 'loja.html'; }, 1000);
+                    setTimeout(() => { window.location.href = 'loj.html'; }, 1000);
                 })
                 .catch((error) => handleFirebaseError(error, messageEl));
         });

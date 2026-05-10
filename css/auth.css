@@ -67,6 +67,7 @@
     cursor: pointer;
     font-weight: 600;
     color: var(--medium-gray);
+    background: var(--primary-dark-blue); /* Bug 2 */
     transition: all 0.3s ease;
     border-bottom: 3px solid transparent;
 }
