@@ -91,10 +91,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Cadastro com Email/Senha
         registerForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const name = document.getElementById('reg-name').value;
-            const email = document.getElementById('reg-email').value;
+            const name = document.getElementById('reg-name').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
             const password = document.getElementById('reg-password').value;
             const messageEl = document.getElementById('reg-message');
+            const submitBtn = registerForm.querySelector('button[type="submit"]');
 
             if (password.length < 6) {
                 showMessage(messageEl, 'A senha deve ter pelo menos 6 caracteres.', 'error');
@@ -106,6 +107,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Carregando...';
+
             createUserWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
                     // Atualizar o perfil com o nome
@@ -115,27 +119,39 @@ document.addEventListener('DOMContentLoaded', () => {
                     showMessage(messageEl, 'Cadastro realizado com sucesso! Redirecionando...', 'success');
                     setTimeout(() => { window.location.href = 'loja.html'; }, 1500);
                 })
-                .catch((error) => handleFirebaseError(error, messageEl));
+                .catch((error) => {
+                    handleFirebaseError(error, messageEl);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Criar Conta';
+                });
         });
 
         // Login com Email/Senha
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const email = document.getElementById('login-email').value;
+            const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value;
             const messageEl = document.getElementById('login-message');
+            const submitBtn = loginForm.querySelector('button[type="submit"]');
 
             if (!auth) {
                 showMessage(messageEl, 'Firebase não configurado.', 'error');
                 return;
             }
 
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Carregando...';
+
             signInWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
                     showMessage(messageEl, 'Login realizado com sucesso!', 'success');
                     setTimeout(() => { window.location.href = 'loja.html'; }, 1000);
                 })
-                .catch((error) => handleFirebaseError(error, messageEl));
+                .catch((error) => {
+                    handleFirebaseError(error, messageEl);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Entrar';
+                });
         });
 
         // Login com Google
