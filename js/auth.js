@@ -7,10 +7,11 @@ import {
     signInWithEmailAndPassword,
     GoogleAuthProvider,
     signInWithPopup,
-    onAuthStateChanged,
     signOut,
     updateProfile,
-    deleteUser
+    deleteUser,
+    linkWithCredential,
+    sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -59,6 +60,8 @@ function handleFirebaseError(error, messageEl) {
         showMessage(messageEl, 'Este email já está cadastrado.', 'error');
     } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
         showMessage(messageEl, 'Email ou senha inválidos.', 'error');
+    } else if (error.code === 'auth/invalid-email') {
+        showMessage(messageEl, 'O formato do e-mail é inválido. Verifique e tente novamente.', 'error');
     } else {
         showMessage(messageEl, `Erro: ${error.message}`, 'error');
     }
@@ -91,10 +94,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Cadastro com Email/Senha
         registerForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const name = document.getElementById('reg-name').value;
-            const email = document.getElementById('reg-email').value;
+            const name = document.getElementById('reg-name').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
             const password = document.getElementById('reg-password').value;
             const messageEl = document.getElementById('reg-message');
+            const submitBtn = registerForm.querySelector('button[type="submit"]');
 
             if (password.length < 6) {
                 showMessage(messageEl, 'A senha deve ter pelo menos 6 caracteres.', 'error');
@@ -106,6 +110,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Carregando...';
+
             createUserWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
                     // Atualizar o perfil com o nome
@@ -115,28 +122,63 @@ document.addEventListener('DOMContentLoaded', () => {
                     showMessage(messageEl, 'Cadastro realizado com sucesso! Redirecionando...', 'success');
                     setTimeout(() => { window.location.href = 'loja.html'; }, 1500);
                 })
-                .catch((error) => handleFirebaseError(error, messageEl));
+                .catch((error) => {
+                    handleFirebaseError(error, messageEl);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Criar Conta';
+                });
         });
 
         // Login com Email/Senha
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const email = document.getElementById('login-email').value;
+            const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value;
             const messageEl = document.getElementById('login-message');
+            const submitBtn = loginForm.querySelector('button[type="submit"]');
 
             if (!auth) {
                 showMessage(messageEl, 'Firebase não configurado.', 'error');
                 return;
             }
 
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Carregando...';
+
             signInWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
                     showMessage(messageEl, 'Login realizado com sucesso!', 'success');
                     setTimeout(() => { window.location.href = 'loja.html'; }, 1000);
                 })
-                .catch((error) => handleFirebaseError(error, messageEl));
+                .catch((error) => {
+                    handleFirebaseError(error, messageEl);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Entrar';
+                });
         });
+
+        // Esqueci minha senha
+        const forgotPasswordBtn = document.getElementById('forgot-password');
+        if (forgotPasswordBtn) {
+            forgotPasswordBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const email = document.getElementById('login-email').value.trim();
+                const messageEl = document.getElementById('login-message');
+                
+                if (!email) {
+                    showMessage(messageEl, 'Digite seu e-mail no campo acima e clique em "Esqueci minha senha" novamente.', 'error');
+                    return;
+                }
+
+                sendPasswordResetEmail(auth, email)
+                    .then(() => {
+                        showMessage(messageEl, 'E-mail de redefinição enviado! Verifique sua caixa de entrada e spam.', 'success');
+                    })
+                    .catch((error) => {
+                        handleFirebaseError(error, messageEl);
+                    });
+            });
+        }
 
         // Login com Google
         const googleBtns = document.querySelectorAll('.btn-google');
@@ -156,7 +198,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 signInWithPopup(auth, provider)
                     .then((result) => {
                         window.location.href = 'loja.html';
-                    }).catch((error) => handleFirebaseError(error, messageEl));
+                    }).catch((error) => {
+                        if (error.code === 'auth/account-exists-with-different-credential') {
+                            const email = error.customData.email;
+                            const pendingCred = GoogleAuthProvider.credentialFromError(error);
+                            
+                            // Pergunta a senha para o usuário
+                            const password = prompt(`O e-mail ${email} já possui uma conta. Digite sua senha para vincular sua conta do Google:`);
+                            
+                            if (password) {
+                                signInWithEmailAndPassword(auth, email, password)
+                                    .then((result) => {
+                                        return linkWithCredential(result.user, pendingCred);
+                                    })
+                                    .then(() => {
+                                        alert('Contas vinculadas com sucesso!');
+                                        window.location.href = 'loja.html';
+                                    })
+                                    .catch((err) => {
+                                        showMessage(messageEl, 'Senha incorreta ou erro ao vincular contas.', 'error');
+                                    });
+                            } else {
+                                showMessage(messageEl, 'Vinculação cancelada. Faça login com e-mail e senha.', 'error');
+                            }
+                        } else {
+                            handleFirebaseError(error, messageEl);
+                        }
+                    });
             });
         });
 
@@ -285,29 +353,5 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Lógica simples de carrinho (apenas visual)
-        let cartCount = 0;
-        const addCartBtns = document.querySelectorAll('.btn-add-cart');
-        const cartCountDisplay = document.querySelector('.cart-count');
-
-        addCartBtns.forEach(btn => {
-            btn.addEventListener('click', function () {
-                cartCount++;
-                if (cartCountDisplay) {
-                    cartCountDisplay.textContent = cartCount;
-                    cartCountDisplay.style.display = 'flex';
-                }
-
-                // Feedback visual no botão
-                const originalText = this.innerHTML;
-                this.innerHTML = '<i class="fas fa-check"></i> Adicionado';
-                this.style.backgroundColor = 'var(--secondary-green)';
-
-                setTimeout(() => {
-                    this.innerHTML = originalText;
-                    this.style.backgroundColor = '';
-                }, 2000);
-            });
-        });
     }
 });
