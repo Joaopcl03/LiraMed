@@ -156,6 +156,30 @@
         </div>
     </div>
 
+    <!-- Overlay Escuro do Carrinho -->
+    <div class="cart-overlay" id="cart-overlay"></div>
+
+    <!-- Barra Lateral do Carrinho -->
+    <div class="cart-sidebar" id="cart-sidebar">
+        <div class="cart-sidebar-header">
+            <h3><i class="fas fa-shopping-cart"></i> Seu Carrinho</h3>
+            <button class="close-cart" id="close-cart" title="Fechar Carrinho">&times;</button>
+        </div>
+        <div class="cart-items" id="cart-items">
+            <!-- Itens serão inseridos via JS -->
+            <div class="empty-cart-msg">Seu carrinho está vazio.</div>
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total:</span>
+                <span id="cart-total-price">R$ 0,00</span>
+            </div>
+            <button class="btn btn-checkout">Finalizar Pedido</button>
+            <button class="btn btn-clear-cart" id="btn-clear-cart" style="background-color: #dc3545; margin-top: 10px; width: 100%;">Esvaziar Carrinho</button>
+        </div>
+    </div>
+
     <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/cart.js"></script>
 </body>
 </html>
